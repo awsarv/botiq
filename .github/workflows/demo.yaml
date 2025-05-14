@@ -1,0 +1,10 @@
+# .github/workflows/test.yml
+name: Runner Test
+
+on: [push]
+
+jobs:
+  test-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "✅ Runner is working!"
