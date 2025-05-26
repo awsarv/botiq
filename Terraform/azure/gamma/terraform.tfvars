@@ -4,7 +4,7 @@ settings = {
   dns_prefix            = "argoaks"
   location              = "East US"
   resource_group_name   = "demo-rg"
-  min_kubernetes_version = "1.29"
+  min_kubernetes_version = "1.28"
   enable_auto_scaling   = true
 
   core_pool_name         = "core"
