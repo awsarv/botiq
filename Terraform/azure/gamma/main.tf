@@ -1,5 +1,5 @@
 locals {
-  ssettings = var.settings
+  settings = var.settings
   aks_subnet_id = azurerm_subnet.aks_subnet.id
 }
 
