@@ -1,0 +1,44 @@
+name: Deploy AKS Cluster with ArgoCD
+
+on:
+  workflow_dispatch:
+    inputs:
+      tf_action:
+        description: 'Terraform action (plan/apply/destroy)'
+        required: true
+        default: 'apply'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.12.1
+
+      - name: Confirm Azure CLI Auth
+        run: az account show
+
+      - name: Terraform Init
+        working-directory: Terraform/azure/gamma
+        run: terraform init
+
+      - name: Terraform Plan
+        if: inputs.tf_action == 'plan'
+        working-directory: Terraform/azure/gamma
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: inputs.tf_action == 'apply'
+        working-directory: Terraform/azure/gamma
+        run: terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: inputs.tf_action == 'destroy'
+        working-directory: Terraform/azure/gamma
+        run: terraform destroy -auto-approve
