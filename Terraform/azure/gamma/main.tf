@@ -9,7 +9,10 @@ data "azurerm_kubernetes_service_versions" "available_versions" {
 }
 
 locals {
-  selected_version = data.azurerm_kubernetes_service_versions.available_versions.latest_version
+  selected_version = (
+    data.azurerm_kubernetes_service_versions.available_versions.latest_version != null &&
+    data.azurerm_kubernetes_service_versions.available_versions.latest_version != "0.0.0"
+  ) ? data.azurerm_kubernetes_service_versions.available_versions.latest_version : "1.28.101"
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
