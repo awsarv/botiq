@@ -42,3 +42,10 @@ jobs:
         if: inputs.tf_action == 'destroy'
         working-directory: Terraform/azure/gamma
         run: terraform destroy -auto-approve
+
+      - name: Wait for ArgoCD Pods to be Ready
+        if: inputs.tf_action == 'apply'
+        run: |
+          echo "Waiting for ArgoCD pods..."
+          kubectl wait --for=condition=Ready pod --all -n argocd --timeout=300s
+          kubectl get pods -n argocd

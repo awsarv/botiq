@@ -106,3 +106,10 @@ resource "azurerm_subnet" "aks_subnet" {
 }
 
 
+module "argocd" {
+  source     = "../../../ArgoCD/modules/argocd"
+  namespace  = "argocd"
+  domain_name = "argocd.dev.mycompany.com"
+  replicas    = 2
+  tls_enabled = true
+}
