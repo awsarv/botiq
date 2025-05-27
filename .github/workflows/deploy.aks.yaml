@@ -33,7 +33,15 @@ jobs:
         working-directory: Terraform/azure/gamma
         run: terraform plan
 
-      - name: Terraform Apply
+      - name: Terraform Apply (AKS only)
+        if: inputs.tf_action == 'apply'
+        working-directory: Terraform/azure/gamma
+        run: terraform apply -target=azurerm_kubernetes_cluster.aks -auto-approve
+
+      - name: Get kubeconfig
+        run: az aks get-credentials --resource-group demo-rg --name argo-aks --overwrite-existing
+
+      - name: Terraform Apply (rest - ArgoCD module)
         if: inputs.tf_action == 'apply'
         working-directory: Terraform/azure/gamma
         run: terraform apply -auto-approve
