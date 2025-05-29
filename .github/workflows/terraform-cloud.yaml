@@ -1,18 +1,30 @@
-name: Terraform Cloud Apply
-
-on:
-  push:
-    branches: [main] # or your deployment branch
-
-jobs:
-  run-terraform-cloud:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Terraform Cloud Run
-        uses: hashicorp/tfc-workflows-github-actions@v1
-        with:
-          organization: techrip    # <- your Terraform Cloud org name
-          workspace: demo # <- your workspace name
-          tfc_token: ${{ secrets.TFC_TOKEN }}
-          # Optional: auto-apply if you want:
-          auto_apply: true
+- name: Trigger TFC Run via API
+  env:
+    TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
+    TFC_ORG: techrip              # <-- replace with your TFC org
+    TFC_WORKSPACE: demo  # <-- replace with your TFC workspace
+  run: |
+    curl -s \
+      --header "Authorization: Bearer $TFC_TOKEN" \
+      --header "Content-Type: application/vnd.api+json" \
+      --request POST \
+      --data @- \
+      https://app.terraform.io/api/v2/organizations/$TFC_ORG/runs <<EOF
+    {
+      "data": {
+        "attributes": {
+          "is-destroy": false,
+          "message": "Triggered by GitHub Actions"
+        },
+        "type": "runs",
+        "relationships": {
+          "workspace": {
+            "data": {
+              "type": "workspaces",
+              "name": "$TFC_WORKSPACE"
+            }
+          }
+        }
+      }
+    }
+    EOF
