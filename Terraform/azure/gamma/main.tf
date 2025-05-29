@@ -1,5 +1,5 @@
 locals {
-  settings = var.settings
+  settings      = var.settings
   aks_subnet_id = azurerm_subnet.aks_subnet.id
 }
 
@@ -15,6 +15,11 @@ locals {
   ) ? data.azurerm_kubernetes_service_versions.available_versions.latest_version : "1.31.8"
 }
 
+resource "azurerm_resource_group" "staging" {
+  name     = local.settings.resource_group_name
+  location = local.settings.location
+}
+
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = local.settings.aks_name
   location            = local.settings.location
@@ -25,7 +30,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   default_node_pool {
     name                 = local.settings.core_pool_name
     vm_size              = local.settings.core_pool_vm_size
-    node_count           = 1
+    node_count           = 3
     auto_scaling_enabled = local.settings.enable_auto_scaling
     min_count            = local.settings.core_pool_min_node_count
     max_count            = local.settings.core_pool_max_node_count
@@ -62,30 +67,31 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
-#resource "azurerm_kubernetes_cluster_node_pool" "user_pool" {
-#  count                 = local.settings.user_pool_enable ? 1 : 0
-#  name                  = local.settings.user_pool_name
-#  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
-#  vm_size               = local.settings.user_pool_vm_size
-#  node_count            = 1
-#  auto_scaling_enabled  = local.settings.enable_auto_scaling
-#  min_count             = local.settings.user_pool_min_node_count
-#  max_count             = local.settings.user_pool_max_node_count
-#  os_disk_size_gb       = local.settings.user_pool_disk_size
-#  os_disk_type          = local.settings.user_pool_disk_type
-#  vnet_subnet_id        = local.aks_subnet_id
-#  mode                  = "User"
+resource "azurerm_kubernetes_cluster_node_pool" "user_pool" {
+  count                 = local.settings.user_pool_enable ? 1 : 0
+  name                  = local.settings.user_pool_name
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
+  vm_size               = local.settings.user_pool_vm_size
+  node_count            = 3
+  availability_zones    = ["1", "2", "3"]
+  auto_scaling_enabled  = local.settings.enable_auto_scaling
+  min_count             = local.settings.user_pool_min_node_count
+  max_count             = local.settings.user_pool_max_node_count
+  os_disk_size_gb       = local.settings.user_pool_disk_size
+  os_disk_type          = local.settings.user_pool_disk_type
+  vnet_subnet_id        = local.aks_subnet_id
+  mode                  = "User"
 
-#  node_labels = {
-#    role = "argo-workloads"
-#  }
+  node_labels = {
+    role = "argo-workloads"
+  }
 
-#  tags = local.settings.tags
+  tags = local.settings.tags
 
-#  lifecycle {
-#    ignore_changes = [node_count]
-#  }
-#}
+  lifecycle {
+    ignore_changes = [node_count]
+  }
+}
 
 resource "azurerm_virtual_network" "aks_vnet" {
   name                = "argo-vnet"
@@ -103,13 +109,4 @@ resource "azurerm_subnet" "aks_subnet" {
   resource_group_name  = azurerm_virtual_network.aks_vnet.resource_group_name
   virtual_network_name = azurerm_virtual_network.aks_vnet.name
   address_prefixes     = ["10.10.1.0/24"]
-}
-
-
-module "argocd" {
-  source     = "../../../ArgoCD/modules/argocd"
-  namespace  = "argocd"
-  domain_name = "argocd.dev.mycompany.com"
-  replicas    = 2
-  tls_enabled = true
 }

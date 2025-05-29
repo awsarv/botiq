@@ -1,0 +1,38 @@
+# Local .terraform directories
+**/.terraform/*
+!.terraform/.gitkeep
+
+# Terraform state files*.tfstate
+*.tfstate.*
+!terraform.tfstate.example
+
+# Crash log files
+crash.log
+*.log
+
+# Exclude all tfvars (commonly contain secrets)
+*.tfvars
+*.tfvars.json
+!*.example.tfvars
+!*.example.tfvars.json
+
+# Exclude tfvars inside envs/ (your custom env folder)
+envs/*.tfvars
+envs/*.tfvars.json
+!envs/*.example.tfvars
+!envs/*.example.tfvars.json
+
+# Exclude plan files
+*.tfplan
+
+# Sensitive files
+*.pem
+*.key
+*.crt
+
+# Ignore editor and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
