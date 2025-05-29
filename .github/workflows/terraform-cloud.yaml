@@ -11,8 +11,8 @@ jobs:
       - name: Trigger Terraform Cloud Run
         uses: hashicorp/tfc-workflows-github-actions@v1
         with:
-          organization: your-tfc-org    # <- your Terraform Cloud org name
-          workspace: your-tfc-workspace # <- your workspace name
+          organization: techrip    # <- your Terraform Cloud org name
+          workspace: demo # <- your workspace name
           tfc_token: ${{ secrets.TFC_TOKEN }}
           # Optional: auto-apply if you want:
           auto_apply: true
