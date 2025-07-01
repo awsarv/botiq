@@ -1,10 +1,11 @@
+
 ---
 
 # AKS + ArgoCD GitOps Automation Demo
 
 This repository demonstrates a complete GitOps workflow using Azure Kubernetes Service (AKS), ArgoCD, and GitHub Actions.
 
-In under 25 minutes, you can:
+What you can do:
 
 * Provision an AKS cluster via Terraform
 * Automatically install ArgoCD on the cluster
