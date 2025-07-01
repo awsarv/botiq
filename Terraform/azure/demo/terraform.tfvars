@@ -1,0 +1,9 @@
+resource_group_name  = "aks-demo-rg"
+subscription_id      = "cb8ab8ff-9482-4d8b-844b-65375fb001bb"
+location             = "East US"
+aks_name             = "aks-demo"
+aks_dns_prefix       = "aksdemodns"
+agentpool_node_count = 1
+agentpool_vm_size    = "Standard_DS2_v2"
+userpool_node_count  = 1
+userpool_vm_size     = "Standard_DS2_v2"
