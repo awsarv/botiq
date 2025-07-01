@@ -5,6 +5,5 @@ aks_name             = "aks-demo"
 aks_dns_prefix       = "aksdemodns"
 agentpool_node_count = 1
 userpool_node_count  = 1
-agentpool_vm_size = "Standard_B2ms"
-userpool_vm_size  = "Standard_B2ms"
-
+agentpool_vm_size    = "Standard_B2ms"
+userpool_vm_size     = "Standard_B2ms"
