@@ -8,10 +8,15 @@ on:
       - 'Terraform/azure/demo/**'
       - '.github/workflows/aks-deploy.yaml'
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform (apply or destroy)'
+        required: true
+        default: 'apply'
 
 jobs:
   terraform:
-    name: 'Terraform Plan and Apply'
+    name: 'Terraform Plan and Apply/Destroy'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,6 +46,12 @@ jobs:
     - name: Terraform Plan
       run: terraform plan -input=false
 
+    # Apply on push, or if workflow_dispatch input is 'apply'
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/demo'
+      if: github.ref == 'refs/heads/demo' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
       run: terraform apply -auto-approve -input=false
+
+    # Destroy only if workflow_dispatch input is 'destroy'
+    - name: Terraform Destroy
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+      run: terraform destroy -auto-approve -input=false
