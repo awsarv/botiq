@@ -1,5 +1,3 @@
-Certainly! Here’s a **clean, professional `README.md`** (no special icons, just clear headings, bullet points, and code blocks) ready to use for your interview/demo:
-
 ---
 
 # AKS + ArgoCD GitOps Automation Demo
