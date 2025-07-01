@@ -2,5 +2,3 @@ server:
   service:
     type: ClusterIP
 
-admin:
-  password: $2a$10$7uVYZTiqkQtLnyf6vANi3eKcE8pt2qmrwAF5tKFMj1uAx4YQlXAiC
