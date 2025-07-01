@@ -17,6 +17,10 @@ on:
         description: "Path to values.yaml file"
         required: false
         default: "ArgoCD/demo/values.yaml"
+      app-manifest-path:
+        description: "Path to ArgoCD Application manifest"
+        required: false
+        default: "ArgoCD/demo/demo-app.yaml"
       branch:
         description: "Branch to checkout"
         required: false
@@ -69,6 +73,14 @@ jobs:
             --version ${{ github.event.inputs.helm-chart-version }} \
             --namespace argocd \
             -f "${{ github.event.inputs.values-path }}"
+
+      - name: Wait for ArgoCD API server to be ready
+        run: |
+          kubectl rollout status deployment/argocd-server -n argocd --timeout=180s
+
+      - name: Deploy ArgoCD Application
+        run: |
+          kubectl apply -f "${{ github.event.inputs.app-manifest-path }}" -n argocd
 
       - name: Show port-forward instructions
         run: |
