@@ -1,0 +1,44 @@
+name: 'Azure Platform Authentication'
+description: 'Authenticate to Azure using Service Principal'
+
+inputs:
+  client_id:
+    description: "Azure SP Client ID"
+    required: true
+  client_secret:
+    description: "Azure SP Client Secret"
+    required: true
+  tenant_id:
+    description: "Azure Tenant ID"
+    required: true
+  subscription_id:
+    description: "Azure Subscription ID"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Azure CLI
+      shell: bash
+      run: |
+        if ! command -v az &> /dev/null; then
+          echo "Installing Azure CLI..."
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        fi
+        az config set core.output=json
+
+    - name: Azure CLI Login
+      shell: bash
+      env:
+        CLIENT_ID: ${{ inputs.client_id }}
+        CLIENT_SECRET: ${{ inputs.client_secret }}
+        TENANT_ID: ${{ inputs.tenant_id }}
+        SUBSCRIPTION_ID: ${{ inputs.subscription_id }}
+      run: |
+        echo "Logging into Azure..."
+        az login --service-principal \
+          --username "$CLIENT_ID" \
+          --password "$CLIENT_SECRET" \
+          --tenant "$TENANT_ID" \
+          --only-show-errors
+        az account set --subscription "$SUBSCRIPTION_ID"
