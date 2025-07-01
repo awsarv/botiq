@@ -1,0 +1,79 @@
+name: "Install ArgoCD on AKS via Helm (OCI)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      aks-cluster-name:
+        description: "AKS cluster name"
+        required: true
+      aks-resource-group:
+        description: "Resource group for AKS cluster"
+        required: true
+      acr-login-server:
+        description: "Azure Container Registry login server (e.g., acraocpshsrvnonprod.azurecr.io)"
+        required: true
+        default: "acraocpshsrvnonprod.azurecr.io"
+      helm-chart-version:
+        description: "ArgoCD Helm chart version"
+        required: true
+        default: "8.0.11"
+      values-path:
+        description: "Path to values.yaml file"
+        required: false
+        default: "ArgoCD/demo/values.yaml"
+      branch:
+        description: "Branch to checkout"
+        required: false
+        default: "demo"
+
+jobs:
+  install-argocd:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout repo (demo branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Kubectl
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ github.event.inputs.aks-resource-group }}
+          cluster-name: ${{ github.event.inputs.aks-cluster-name }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: ACR Login for Helm OCI
+        run: |
+          az acr login --name $(echo ${{ github.event.inputs.acr-login-server }} | cut -d'.' -f1)
+          helm registry login ${{ github.event.inputs.acr-login-server }} --username 00000000-0000-0000-0000-000000000000 --password $(az acr login --name $(echo ${{ github.event.inputs.acr-login-server }} | cut -d'.' -f1) --expose-token --query accessToken -o tsv)
+
+      - name: Create argocd namespace if not exists
+        run: |
+          kubectl get namespace argocd || kubectl create namespace argocd
+
+      - name: Install/Upgrade ArgoCD via Helm OCI
+        run: |
+          helm upgrade --install argocd oci://${{ github.event.inputs.acr-login-server }}/helm/argo-cd \
+            --version ${{ github.event.inputs.helm-chart-version }} \
+            --namespace argocd \
+            -f "${{ github.event.inputs.values-path }}"
+
+      - name: Show port-forward instructions
+        run: |
+          echo "To access ArgoCD UI, run locally:"
+          echo "kubectl port-forward svc/argocd-server -n argocd 8080:443"
