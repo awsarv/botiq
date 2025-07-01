@@ -1,4 +1,4 @@
-name: "Install ArgoCD on AKS via Helm (OCI)"
+name: "Install ArgoCD on AKS via Public Helm Repo"
 
 on:
   workflow_dispatch:
@@ -9,10 +9,6 @@ on:
       aks-resource-group:
         description: "Resource group for AKS cluster"
         required: true
-      acr-login-server:
-        description: "Azure Container Registry login server (e.g., acraocpshsrvnonprod.azurecr.io)"
-        required: true
-        default: "acraocpshsrvnonprod.azurecr.io"
       helm-chart-version:
         description: "ArgoCD Helm chart version"
         required: true
@@ -58,18 +54,18 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
 
-      - name: ACR Login for Helm OCI
+      - name: Add Argo Helm repo
         run: |
-          az acr login --name $(echo ${{ github.event.inputs.acr-login-server }} | cut -d'.' -f1)
-          helm registry login ${{ github.event.inputs.acr-login-server }} --username 00000000-0000-0000-0000-000000000000 --password $(az acr login --name $(echo ${{ github.event.inputs.acr-login-server }} | cut -d'.' -f1) --expose-token --query accessToken -o tsv)
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
 
       - name: Create argocd namespace if not exists
         run: |
           kubectl get namespace argocd || kubectl create namespace argocd
 
-      - name: Install/Upgrade ArgoCD via Helm OCI
+      - name: Install/Upgrade ArgoCD via Public Helm
         run: |
-          helm upgrade --install argocd oci://${{ github.event.inputs.acr-login-server }}/helm/argo-cd \
+          helm upgrade --install argocd argo/argo-cd \
             --version ${{ github.event.inputs.helm-chart-version }} \
             --namespace argocd \
             -f "${{ github.event.inputs.values-path }}"
