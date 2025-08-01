@@ -1,0 +1,85 @@
+name: "Install ArgoCD on AKS via Public Helm Repo"
+
+on:
+  workflow_dispatch:
+    inputs:
+      aks-cluster-name:
+        description: "AKS cluster name"
+        required: true
+      aks-resource-group:
+        description: "Resource group for AKS cluster"
+        required: true
+      helm-chart-version:
+        description: "ArgoCD Helm chart version"
+        required: true
+        default: "8.0.11"
+      values-path:
+        description: "Path to values.yaml file"
+        required: false
+        default: "ArgoCD/demo/values.yaml"
+      app-manifest-path:
+        description: "Path to ArgoCD Application manifest"
+        required: false
+        default: "ArgoCD/demo/demo-app.yaml"
+      branch:
+        description: "Branch to checkout"
+        required: false
+        default: "demo"
+
+jobs:
+  install-argocd:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout repo (demo branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Azure CLI Login (SPN)
+        uses: ./.github/scripts/azure-login
+        with:
+          client_id: ${{ env.AZURE_CLIENT_ID }}
+          client_secret: ${{ env.AZURE_CLIENT_SECRET }}
+          tenant_id: ${{ env.AZURE_TENANT_ID }}
+          subscription_id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Kubectl
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ github.event.inputs.aks-resource-group }}
+          cluster-name: ${{ github.event.inputs.aks-cluster-name }}
+
+      - name: Add Argo Helm repo
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+
+      - name: Create argocd namespace if not exists
+        run: |
+          kubectl get namespace argocd || kubectl create namespace argocd
+
+      - name: Install/Upgrade ArgoCD via Public Helm
+        run: |
+          helm upgrade --install argocd argo/argo-cd \
+            --version ${{ github.event.inputs.helm-chart-version }} \
+            --namespace argocd \
+            -f "${{ github.event.inputs.values-path }}"
+
+      - name: Wait for ArgoCD API server to be ready
+        run: |
+          kubectl rollout status deployment/argocd-server -n argocd --timeout=180s
+
+      - name: Deploy ArgoCD Application
+        run: |
+          kubectl apply -f "${{ github.event.inputs.app-manifest-path }}" -n argocd
+
+      - name: Show port-forward instructions
+        run: |
+          echo "To access ArgoCD UI, run locally:"
+          echo "kubectl port-forward svc/argocd-server -n argocd 8080:443"
