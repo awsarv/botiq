@@ -1,4 +1,4 @@
-name: "Install ArgoCD on AKS via Public Helm Repo"
+name: "demo wf"
 
 on:
   workflow_dispatch:
